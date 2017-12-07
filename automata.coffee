@@ -1,4 +1,4 @@
-class GameOfLife
+class Conrand
   nodeArray: null
   canvasheight: 400
   canvaswidth: 400
@@ -154,8 +154,8 @@ class GameOfLife
 
   reproduce: (node, array) ->
 
-    newX = (0.5 * Math.random()) * @adjacentDistance * 10 + node.xPos
-    newY = (0.5 * Math.random()) * @adjacentDistance * 10 + node.yPos
+    newX = node.xPos + (Math.random() - 0.5) * @adjacentDistance * 10
+    newY = node.yPos + (Math.random() - 0.5) * @adjacentDistance * 10
 
     if newX > this.canvas.width
       newX = this.canvas.width
@@ -163,7 +163,13 @@ class GameOfLife
     if newY > this.canvas.height
       newY = this.canvas.height
 
+    if newX < 0
+      newX = 0
+
+    if newY < 0
+      newY = 0
+
     newCircle = @createCircle(newX, newY, node.radius)
     array.push newCircle
 
-window.GameOfLife = GameOfLife
+window.Conrand = Conrand
