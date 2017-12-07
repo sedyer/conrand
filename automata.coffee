@@ -2,7 +2,7 @@ class Conrand
   nodeArray: null
   canvasheight: 400
   canvaswidth: 400
-  initialnodes: 500
+  initialnodes: 150
   adjacentDistance: 20
   tickLength: 100
   canvas: null
@@ -34,7 +34,7 @@ class Conrand
 
     neighbors = getNeighbors(node, array, distance)
     context = @drawingContext
-    context.lineWidth = 2
+    context.lineWidth = 1
     context.strokeStyle = 'rgb(242, 198, 65)'
 
     for x in neighbors
@@ -121,7 +121,7 @@ class Conrand
 
       neighborCount = countNeighbors(node, @nodeArray, @adjacentDistance)
 
-      if neighborCount is 2
+      if neighborCount is 3
         @reproduce(node, newArray)
     
     @nodeArray = newArray
@@ -134,11 +134,11 @@ class Conrand
 
       neighborCount = countNeighbors(node, newArray, @adjacentDistance)
 
-      if neighborCount is 1
+      if neighborCount < 3
         if Math.random() < 0.50
           node.alive = false
 
-      if neighborCount > 3
+      if neighborCount > 5
         if Math.random() < 0.50
           node.alive = false
 
@@ -154,8 +154,14 @@ class Conrand
 
   reproduce: (node, array) ->
 
-    newX = node.xPos + (Math.random() - 0.5) * @adjacentDistance * 10
-    newY = node.yPos + (Math.random() - 0.5) * @adjacentDistance * 10
+    # newX = node.xPos + (Math.random() - 0.5) * @adjacentDistance * 10
+    # newY = node.yPos + (Math.random() - 0.5) * @adjacentDistance * 10
+
+    neighbors = getNeighbors(node, array, @adjacentDistance)
+  
+    newX = neighbors[1].xPos + (Math.random() - 0.5) * 2 * @adjacentDistance
+
+    newY = neighbors[2].yPos + (Math.random() - 0.5) * 2 * @adjacentDistance
 
     if newX > this.canvas.width
       newX = this.canvas.width

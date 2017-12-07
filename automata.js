@@ -35,7 +35,7 @@
         var context, i, len, neighbors, results, x;
         neighbors = getNeighbors(node, array, distance);
         context = this.drawingContext;
-        context.lineWidth = 2;
+        context.lineWidth = 1;
         context.strokeStyle = 'rgb(242, 198, 65)';
         results = [];
         for (i = 0, len = neighbors.length; i < len; i++) {
@@ -108,7 +108,7 @@
         for (i = 0, len = ref.length; i < len; i++) {
           node = ref[i];
           neighborCount = countNeighbors(node, this.nodeArray, this.adjacentDistance);
-          if (neighborCount === 2) {
+          if (neighborCount === 3) {
             this.reproduce(node, newArray);
           }
         }
@@ -121,12 +121,12 @@
         for (i = 0, len = newArray.length; i < len; i++) {
           node = newArray[i];
           neighborCount = countNeighbors(node, newArray, this.adjacentDistance);
-          if (neighborCount === 1) {
+          if (neighborCount < 3) {
             if (Math.random() < 0.50) {
               node.alive = false;
             }
           }
-          if (neighborCount > 3) {
+          if (neighborCount > 5) {
             if (Math.random() < 0.50) {
               node.alive = false;
             }
@@ -144,9 +144,12 @@
       }
 
       reproduce(node, array) {
-        var newCircle, newX, newY;
-        newX = node.xPos + (Math.random() - 0.5) * this.adjacentDistance * 10;
-        newY = node.yPos + (Math.random() - 0.5) * this.adjacentDistance * 10;
+        var neighbors, newCircle, newX, newY;
+        // newX = node.xPos + (Math.random() - 0.5) * @adjacentDistance * 10
+        // newY = node.yPos + (Math.random() - 0.5) * @adjacentDistance * 10
+        neighbors = getNeighbors(node, array, this.adjacentDistance);
+        newX = neighbors[1].xPos + (Math.random() - 0.5) * 2 * this.adjacentDistance;
+        newY = neighbors[2].yPos + (Math.random() - 0.5) * 2 * this.adjacentDistance;
         if (newX > this.canvas.width) {
           newX = this.canvas.width;
         }
@@ -171,7 +174,7 @@
 
     Conrand.prototype.canvaswidth = 400;
 
-    Conrand.prototype.initialnodes = 500;
+    Conrand.prototype.initialnodes = 150;
 
     Conrand.prototype.adjacentDistance = 20;
 
