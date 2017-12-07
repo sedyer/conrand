@@ -1,12 +1,23 @@
 class Conrand
+
   nodeArray: null
-  canvasheight: 400
-  canvaswidth: 400
-  initialnodes: 150
-  adjacentDistance: 20
-  tickLength: 100
   canvas: null
   drawingContext: null
+
+  #graphics parameters
+
+  canvasheight: 400
+  canvaswidth: 400
+
+  #game parameters
+  
+  tickLength: 100
+  initialnodes: 200
+  isolationThreshold: 3
+  isolationDeadliness: 0.5
+  overcrowdingThreshold: 5
+  overcrowdingDeadliness: 0.5
+  adjacentDistance: 20
 
   constructor: ->
     @createCanvas()
@@ -134,12 +145,12 @@ class Conrand
 
       neighborCount = countNeighbors(node, newArray, @adjacentDistance)
 
-      if neighborCount < 3
-        if Math.random() < 0.50
+      if neighborCount < @isolationThreshold
+        if Math.random() < @isolationDeadliness
           node.alive = false
 
-      if neighborCount > 5
-        if Math.random() < 0.50
+      if neighborCount > @overcrowdingThreshold
+        if Math.random() < @overcrowdingThreshold
           node.alive = false
 
     index = newArray.length - 1
@@ -154,10 +165,15 @@ class Conrand
 
   reproduce: (node, array) ->
 
+    # original non-directional algorithm
     # newX = node.xPos + (Math.random() - 0.5) * @adjacentDistance * 10
     # newY = node.yPos + (Math.random() - 0.5) * @adjacentDistance * 10
 
     neighbors = getNeighbors(node, array, @adjacentDistance)
+
+    #todo: need a better trigonometric solution to this
+    #todo: also make it so new nodes are placed some minimum distance from parent node
+    #can i do this in radians/degrees & if i can do i want to?
   
     newX = neighbors[1].xPos + (Math.random() - 0.5) * 2 * @adjacentDistance
 

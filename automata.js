@@ -121,13 +121,13 @@
         for (i = 0, len = newArray.length; i < len; i++) {
           node = newArray[i];
           neighborCount = countNeighbors(node, newArray, this.adjacentDistance);
-          if (neighborCount < 3) {
-            if (Math.random() < 0.50) {
+          if (neighborCount < this.isolationThreshold) {
+            if (Math.random() < this.isolationDeadliness) {
               node.alive = false;
             }
           }
-          if (neighborCount > 5) {
-            if (Math.random() < 0.50) {
+          if (neighborCount > this.overcrowdingThreshold) {
+            if (Math.random() < this.overcrowdingThreshold) {
               node.alive = false;
             }
           }
@@ -145,9 +145,13 @@
 
       reproduce(node, array) {
         var neighbors, newCircle, newX, newY;
+        // original non-direction algorithm
         // newX = node.xPos + (Math.random() - 0.5) * @adjacentDistance * 10
         // newY = node.yPos + (Math.random() - 0.5) * @adjacentDistance * 10
         neighbors = getNeighbors(node, array, this.adjacentDistance);
+        //todo: need a better trigonometric solution to this
+        //todo: also make it so new nodes are placed some minimum distance from parent node
+        //can i do this in radians/degrees & if i can do i want to?
         newX = neighbors[1].xPos + (Math.random() - 0.5) * 2 * this.adjacentDistance;
         newY = neighbors[2].yPos + (Math.random() - 0.5) * 2 * this.adjacentDistance;
         if (newX > this.canvas.width) {
@@ -170,19 +174,29 @@
 
     Conrand.prototype.nodeArray = null;
 
+    Conrand.prototype.canvas = null;
+
+    Conrand.prototype.drawingContext = null;
+
+    //graphics parameters
     Conrand.prototype.canvasheight = 400;
 
     Conrand.prototype.canvaswidth = 400;
 
-    Conrand.prototype.initialnodes = 150;
-
-    Conrand.prototype.adjacentDistance = 20;
-
+    //game parameters
     Conrand.prototype.tickLength = 100;
 
-    Conrand.prototype.canvas = null;
+    Conrand.prototype.initialnodes = 200;
 
-    Conrand.prototype.drawingContext = null;
+    Conrand.prototype.isolationThreshold = 3;
+
+    Conrand.prototype.isolationDeadliness = 0.5;
+
+    Conrand.prototype.overcrowdingThreshold = 5;
+
+    Conrand.prototype.overcrowdingDeadliness = 0.5;
+
+    Conrand.prototype.adjacentDistance = 20;
 
     getDistance = function(a, b) {
       var sumOfSquares, xdiff, ydiff;
