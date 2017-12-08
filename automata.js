@@ -3,7 +3,7 @@
   var Conrand;
 
   Conrand = (function() {
-    var countNeighbors, getDistance, getNeighbors;
+    var getDistance, getNeighbors;
 
     class Conrand {
       constructor() {
@@ -22,9 +22,13 @@
       }
 
       drawCircle(circle) {
+        if (circle.alive === true) {
+          this.drawingContext.fillStyle = 'white';
+        } else {
+          this.drawingContext.fillStyle = 'grey';
+        }
         this.drawingContext.lineWidth = 2;
         this.drawingContext.strokeStyle = 'rgba(242, 198, 65, 0.1)';
-        this.drawingContext.fillStyle = 'white';
         this.drawingContext.beginPath();
         this.drawingContext.arc(circle.xPos, circle.yPos, circle.radius, 0, 2 * Math.PI, false);
         this.drawingContext.fill();
@@ -84,11 +88,7 @@
         results = [];
         for (j = 0, len1 = ref1.length; j < len1; j++) {
           node = ref1[j];
-          if (node.alive === true) {
-            results.push(this.drawCircle(node));
-          } else {
-            results.push(void 0);
-          }
+          results.push(this.drawCircle(node));
         }
         return results;
       }
@@ -115,6 +115,9 @@
             if (neighbors.length > 3) {
               this.migrate(node, newArray);
             }
+            if (neighbors.length === 3) {
+              this.wiggle(node, newArray);
+            }
             if (neighbors.length === 2) {
               this.reflectTriangle(node, newArray, neighbors);
             }
@@ -127,17 +130,20 @@
       }
 
       cull() {
-        var i, index, len, neighborCount, newArray, node;
+        var i, index, len, neighbors, newArray, node;
         newArray = this.nodeArray;
         for (i = 0, len = newArray.length; i < len; i++) {
           node = newArray[i];
-          neighborCount = countNeighbors(node, newArray, this.adjacentDistance);
-          if (neighborCount < this.isolationThreshold) {
+          neighbors = getNeighbors(node, newArray, this.adjacentDistance);
+          neighbors = neighbors.filter(function(x) {
+            return getDistance(x, node) > 0;
+          });
+          if (neighbors.length < this.isolationThreshold) {
             if (Math.random() < this.isolationDeadliness) {
               node.alive = false;
             }
           }
-          if (neighborCount > this.overcrowdingThreshold) {
+          if (neighbors.length > this.overcrowdingThreshold) {
             if (Math.random() < this.overcrowdingThreshold) {
               node.alive = false;
             }
@@ -152,6 +158,27 @@
           index--;
         }
         return this.nodeArray = newArray;
+      }
+
+      wiggle(node, array) {
+        var newCircle, newX, newY;
+        newX = node.xPos + ((Math.random() - 0.5) * 8);
+        newY = node.yPos + ((Math.random() - 0.5) * 8);
+        if (newX > this.canvas.width) {
+          newX = this.canvas.width;
+        }
+        if (newY > this.canvas.height) {
+          newY = this.canvas.height;
+        }
+        if (newX < 0) {
+          newX = 0;
+        }
+        if (newY < 0) {
+          newY = 0;
+        }
+        newCircle = this.createCircle(newX, newY, node.radius);
+        array.push(newCircle);
+        return node.alive = false;
       }
 
       migrate(node, array) {
@@ -260,19 +287,17 @@
     //game parameters
     Conrand.prototype.tickLength = 100;
 
-    Conrand.prototype.initialnodes = 300;
+    Conrand.prototype.initialnodes = 100;
 
-    Conrand.prototype.isolationThreshold = 2;
+    Conrand.prototype.isolationThreshold = 1;
 
     Conrand.prototype.isolationDeadliness = 0.5;
 
-    Conrand.prototype.reproductionCount = 3;
-
-    Conrand.prototype.overcrowdingThreshold = 10;
+    Conrand.prototype.overcrowdingThreshold = 3;
 
     Conrand.prototype.overcrowdingDeadliness = 0.5;
 
-    Conrand.prototype.adjacentDistance = 40;
+    Conrand.prototype.adjacentDistance = 30;
 
     getDistance = function(a, b) {
       var sumOfSquares, xdiff, ydiff;
@@ -283,29 +308,19 @@
     };
 
     getNeighbors = function(node, array, distance) {
-      var d, i, len, neighbors, x;
+      var d, i, len, neighbors, newArray, x;
+      newArray = array.filter(function(x) {
+        return x.alive === true;
+      });
       neighbors = [];
-      for (i = 0, len = array.length; i < len; i++) {
-        x = array[i];
+      for (i = 0, len = newArray.length; i < len; i++) {
+        x = newArray[i];
         d = getDistance(node, x);
         if (d < distance) {
           neighbors.push(x);
         }
       }
       return neighbors;
-    };
-
-    countNeighbors = function(node, array, distance) {
-      var count, d, i, len, x;
-      count = 0;
-      for (i = 0, len = array.length; i < len; i++) {
-        x = array[i];
-        d = getDistance(node, x);
-        if (d < distance) {
-          count++;
-        }
-      }
-      return count;
     };
 
     return Conrand;

@@ -12,13 +12,12 @@ class Conrand
   #game parameters
   
   tickLength: 100
-  initialnodes: 300
-  isolationThreshold: 2
+  initialnodes: 100
+  isolationThreshold: 1
   isolationDeadliness: 0.5
-  reproductionCount: 3
-  overcrowdingThreshold: 10
+  overcrowdingThreshold: 3
   overcrowdingDeadliness: 0.5
-  adjacentDistance: 40
+  adjacentDistance: 30
 
   constructor: ->
     @createCanvas()
@@ -33,10 +32,13 @@ class Conrand
     @drawingContext = @canvas.getContext '2d'
 
   drawCircle: (circle) ->
+    if circle.alive is true
+      @drawingContext.fillStyle = 'white'
+    else
+      @drawingContext.fillStyle = 'grey'
 
     @drawingContext.lineWidth = 2
     @drawingContext.strokeStyle = 'rgba(242, 198, 65, 0.1)'
-    @drawingContext.fillStyle = 'white'
     @drawingContext.beginPath()
     @drawingContext.arc(circle.xPos, circle.yPos, circle.radius, 0, 2 * Math.PI, false)
     @drawingContext.fill()
@@ -77,8 +79,7 @@ class Conrand
         @drawConnections(node, @nodeArray, @adjacentDistance)
 
     for node in @nodeArray
-      if node.alive is true
-        @drawCircle node
+      @drawCircle node
 
   getDistance = (a, b) ->
 
@@ -90,9 +91,10 @@ class Conrand
 
   getNeighbors = (node, array, distance) ->
 
+    newArray = array.filter((x) -> x.alive is true)
     neighbors = []
 
-    for x in array
+    for x in newArray
 
         d = getDistance(node, x)
 
@@ -100,20 +102,6 @@ class Conrand
             neighbors.push x
 
     return neighbors
-
-
-  countNeighbors = (node, array, distance) ->
-    
-    count = 0
-
-    for x in array
-
-        d = getDistance(node, x)
-
-        if d < distance
-            count++
-
-    return count
 
   tick: =>
 
@@ -139,6 +127,10 @@ class Conrand
         if neighbors.length > 3
 
           @migrate(node, newArray)
+        
+        if neighbors.length == 3
+
+          @wiggle(node, newArray)
 
         if neighbors.length == 2
 
@@ -156,13 +148,15 @@ class Conrand
 
     for node in newArray
 
-      neighborCount = countNeighbors(node, newArray, @adjacentDistance)
+      neighbors = getNeighbors(node, newArray, @adjacentDistance)
 
-      if neighborCount < @isolationThreshold
+      neighbors = neighbors.filter((x) -> getDistance(x, node) > 0)
+
+      if neighbors.length < @isolationThreshold
         if Math.random() < @isolationDeadliness
           node.alive = false
 
-      if neighborCount > @overcrowdingThreshold
+      if neighbors.length > @overcrowdingThreshold
         if Math.random() < @overcrowdingThreshold
           node.alive = false
 
@@ -175,6 +169,28 @@ class Conrand
       index--
 
     @nodeArray = newArray
+
+  wiggle: (node, array) ->
+
+    newX = node.xPos + ((Math.random() - 0.5) * 8)
+    newY = node.yPos + ((Math.random() - 0.5) * 8)
+
+    if newX > this.canvas.width
+      newX = this.canvas.width
+
+    if newY > this.canvas.height
+      newY = this.canvas.height
+
+    if newX < 0
+      newX = 0
+
+    if newY < 0
+      newY = 0
+
+    newCircle = @createCircle(newX, newY, node.radius)
+    array.push newCircle
+
+    node.alive = false
 
   migrate: (node, array) ->
 
