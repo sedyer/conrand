@@ -94,22 +94,33 @@
       }
 
       tick() {
-        this.drawingContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.draw();
         this.evolve();
         this.cull();
+        this.drawingContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.draw();
         return setTimeout(this.tick, this.tickLength);
       }
 
       evolve() {
-        var i, len, neighborCount, newArray, node, ref;
+        var i, len, neighbors, newArray, node, ref;
         newArray = this.nodeArray;
         ref = this.nodeArray;
         for (i = 0, len = ref.length; i < len; i++) {
           node = ref[i];
-          neighborCount = countNeighbors(node, this.nodeArray, this.adjacentDistance);
-          if (neighborCount === 3) {
-            this.reproduce(node, newArray);
+          if (node.alive === true) {
+            neighbors = getNeighbors(node, newArray, this.adjacentDistance);
+            neighbors = neighbors.filter(function(x) {
+              return getDistance(x, node) > 0;
+            });
+            if (neighbors.length > 3) {
+              this.migrate(node, newArray);
+            }
+            if (neighbors.length === 2) {
+              this.reflectTriangle(node, newArray, neighbors);
+            }
+            if (neighbors.length === 1) {
+              this.buildTriangle(node, newArray, neighbors[0]);
+            }
           }
         }
         return this.nodeArray = newArray;
@@ -143,17 +154,31 @@
         return this.nodeArray = newArray;
       }
 
-      reproduce(node, array) {
-        var neighbors, newCircle, newX, newY;
-        // original non-direction algorithm
-        // newX = node.xPos + (Math.random() - 0.5) * @adjacentDistance * 10
-        // newY = node.yPos + (Math.random() - 0.5) * @adjacentDistance * 10
-        neighbors = getNeighbors(node, array, this.adjacentDistance);
-        //todo: need a better trigonometric solution to this
-        //todo: also make it so new nodes are placed some minimum distance from parent node
-        //can i do this in radians/degrees & if i can do i want to?
-        newX = neighbors[1].xPos + (Math.random() - 0.5) * 2 * this.adjacentDistance;
-        newY = neighbors[2].yPos + (Math.random() - 0.5) * 2 * this.adjacentDistance;
+      migrate(node, array) {
+        var newCircle, newX, newY;
+        newX = node.xPos + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
+        newY = node.yPos + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
+        if (newX > this.canvas.width) {
+          newX = this.canvas.width;
+        }
+        if (newY > this.canvas.height) {
+          newY = this.canvas.height;
+        }
+        if (newX < 0) {
+          newX = 0;
+        }
+        if (newY < 0) {
+          newY = 0;
+        }
+        newCircle = this.createCircle(newX, newY, node.radius);
+        array.push(newCircle);
+        return node.alive = false;
+      }
+
+      buildTriangle(node, array, neighbor) {
+        var newCircle, newX, newY;
+        newX = neighbor.xPos + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
+        newY = neighbor.yPos + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
         if (newX > this.canvas.width) {
           newX = this.canvas.width;
         }
@@ -168,6 +193,55 @@
         }
         newCircle = this.createCircle(newX, newY, node.radius);
         return array.push(newCircle);
+      }
+
+      reflectTriangle(node, array, neighbors) {
+        var newCircle, newX, newY, x, xDiffs, yDiffs;
+        xDiffs = (function() {
+          var i, len, results;
+          results = [];
+          for (i = 0, len = neighbors.length; i < len; i++) {
+            x = neighbors[i];
+            results.push(x.xPos - node.xPos);
+          }
+          return results;
+        })();
+        yDiffs = (function() {
+          var i, len, results;
+          results = [];
+          for (i = 0, len = neighbors.length; i < len; i++) {
+            x = neighbors[i];
+            results.push(x.yPos - node.yPos);
+          }
+          return results;
+        })();
+        newX = 0;
+        newY = 0;
+        if (Math.abs(xDiffs[0]) > Math.abs(xDiffs[1])) {
+          newX = node.xPos + xDiffs[0] + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
+        } else {
+          newX = node.xPos + xDiffs[1] + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
+        }
+        if (Math.abs(yDiffs[0]) > Math.abs(yDiffs[1])) {
+          newY = node.yPos + yDiffs[0] + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
+        } else {
+          newY = node.yPos + yDiffs[1] + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
+        }
+        if (newX > this.canvas.width) {
+          newX = this.canvas.width;
+        }
+        if (newY > this.canvas.height) {
+          newY = this.canvas.height;
+        }
+        if (newX < 0) {
+          newX = 0;
+        }
+        if (newY < 0) {
+          newY = 0;
+        }
+        newCircle = this.createCircle(newX, newY, node.radius);
+        array.push(newCircle);
+        return node.alive = false;
       }
 
     };
@@ -186,17 +260,19 @@
     //game parameters
     Conrand.prototype.tickLength = 100;
 
-    Conrand.prototype.initialnodes = 200;
+    Conrand.prototype.initialnodes = 300;
 
-    Conrand.prototype.isolationThreshold = 3;
+    Conrand.prototype.isolationThreshold = 2;
 
     Conrand.prototype.isolationDeadliness = 0.5;
 
-    Conrand.prototype.overcrowdingThreshold = 5;
+    Conrand.prototype.reproductionCount = 3;
+
+    Conrand.prototype.overcrowdingThreshold = 10;
 
     Conrand.prototype.overcrowdingDeadliness = 0.5;
 
-    Conrand.prototype.adjacentDistance = 20;
+    Conrand.prototype.adjacentDistance = 40;
 
     getDistance = function(a, b) {
       var sumOfSquares, xdiff, ydiff;

@@ -12,12 +12,13 @@ class Conrand
   #game parameters
   
   tickLength: 100
-  initialnodes: 200
-  isolationThreshold: 3
+  initialnodes: 300
+  isolationThreshold: 2
   isolationDeadliness: 0.5
-  overcrowdingThreshold: 5
+  reproductionCount: 3
+  overcrowdingThreshold: 10
   overcrowdingDeadliness: 0.5
-  adjacentDistance: 20
+  adjacentDistance: 40
 
   constructor: ->
     @createCanvas()
@@ -116,11 +117,11 @@ class Conrand
 
   tick: =>
 
-    @drawingContext.clearRect(0, 0, this.canvas.width, this.canvas.height)
-
-    @draw()
     @evolve()
     @cull()
+
+    @drawingContext.clearRect(0, 0, this.canvas.width, this.canvas.height)
+    @draw()
 
     setTimeout @tick, @tickLength
 
@@ -129,11 +130,23 @@ class Conrand
     newArray = @nodeArray
 
     for node in @nodeArray
+      if node.alive is true
 
-      neighborCount = countNeighbors(node, @nodeArray, @adjacentDistance)
+        neighbors = getNeighbors(node, newArray, @adjacentDistance)
 
-      if neighborCount is 3
-        @reproduce(node, newArray)
+        neighbors = neighbors.filter((x) -> getDistance(x, node) > 0)
+
+        if neighbors.length > 3
+
+          @migrate(node, newArray)
+
+        if neighbors.length == 2
+
+          @reflectTriangle(node, newArray, neighbors)
+
+        if neighbors.length == 1
+
+          @buildTriangle(node, newArray, neighbors[0])
     
     @nodeArray = newArray
 
@@ -163,21 +176,10 @@ class Conrand
 
     @nodeArray = newArray
 
-  reproduce: (node, array) ->
+  migrate: (node, array) ->
 
-    # original non-directional algorithm
-    # newX = node.xPos + (Math.random() - 0.5) * @adjacentDistance * 10
-    # newY = node.yPos + (Math.random() - 0.5) * @adjacentDistance * 10
-
-    neighbors = getNeighbors(node, array, @adjacentDistance)
-
-    #todo: need a better trigonometric solution to this
-    #todo: also make it so new nodes are placed some minimum distance from parent node
-    #can i do this in radians/degrees & if i can do i want to?
-  
-    newX = neighbors[1].xPos + (Math.random() - 0.5) * 2 * @adjacentDistance
-
-    newY = neighbors[2].yPos + (Math.random() - 0.5) * 2 * @adjacentDistance
+    newX = node.xPos + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+    newY = node.yPos + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
 
     if newX > this.canvas.width
       newX = this.canvas.width
@@ -193,5 +195,62 @@ class Conrand
 
     newCircle = @createCircle(newX, newY, node.radius)
     array.push newCircle
+
+    node.alive = false
+
+  buildTriangle: (node, array, neighbor) ->
+
+    newX = neighbor.xPos + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+    newY = neighbor.yPos + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+
+    if newX > this.canvas.width
+      newX = this.canvas.width
+
+    if newY > this.canvas.height
+      newY = this.canvas.height
+
+    if newX < 0
+      newX = 0
+
+    if newY < 0
+      newY = 0
+
+    newCircle = @createCircle(newX, newY, node.radius)
+    array.push newCircle
+
+  reflectTriangle: (node, array, neighbors) ->
+
+      xDiffs = ((x.xPos - node.xPos) for x in neighbors)
+      yDiffs = ((x.yPos - node.yPos) for x in neighbors)
+
+      newX = 0
+      newY = 0
+
+      if Math.abs(xDiffs[0]) > Math.abs(xDiffs[1])
+        newX = node.xPos + xDiffs[0] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+      else
+        newX = node.xPos + xDiffs[1] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+
+      if Math.abs(yDiffs[0]) > Math.abs(yDiffs[1])
+        newY = node.yPos + yDiffs[0] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+      else
+        newY = node.yPos + yDiffs[1] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+
+      if newX > this.canvas.width
+        newX = this.canvas.width
+
+      if newY > this.canvas.height
+        newY = this.canvas.height
+
+      if newX < 0
+        newX = 0
+
+      if newY < 0
+        newY = 0
+
+      newCircle = @createCircle(newX, newY, node.radius)
+      array.push newCircle
+
+      node.alive = false
 
 window.Conrand = Conrand
