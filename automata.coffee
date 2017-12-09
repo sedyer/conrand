@@ -15,7 +15,7 @@ class Conrand
   initialnodes: 100
   isolationThreshold: 1
   isolationDeadliness: 0.5
-  overcrowdingThreshold: 3
+  overcrowdingThreshold: 4
   overcrowdingDeadliness: 0.5
   adjacentDistance: 30
 
@@ -79,7 +79,8 @@ class Conrand
         @drawConnections(node, @nodeArray, @adjacentDistance)
 
     for node in @nodeArray
-      @drawCircle node
+      if node.alive is true
+        @drawCircle node
 
   getDistance = (a, b) ->
 
@@ -138,7 +139,7 @@ class Conrand
 
         if neighbors.length == 1
 
-          @buildTriangle(node, newArray, neighbors[0])
+          @buildTriangle(node, neighbors[0], newArray)
     
     @nodeArray = newArray
 
@@ -214,10 +215,15 @@ class Conrand
 
     node.alive = false
 
-  buildTriangle: (node, array, neighbor) ->
+  buildTriangle: (a, b, array) ->
 
-    newX = neighbor.xPos + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
-    newY = neighbor.yPos + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+    dist = getDistance(a, b)
+
+    theta = Math.atan((a.xPos - a.yPos) / (b.xPos - b.yPos)) * (180 / Math.PI) + 60
+
+    newX = a.xPos + (dist * Math.cos(theta))
+
+    newY = a.yPos + (dist * Math.sin(theta))
 
     if newX > this.canvas.width
       newX = this.canvas.width
@@ -231,42 +237,47 @@ class Conrand
     if newY < 0
       newY = 0
 
-    newCircle = @createCircle(newX, newY, node.radius)
+    newCircle = @createCircle(newX, newY, a.radius)
     array.push newCircle
 
   reflectTriangle: (node, array, neighbors) ->
 
-      xDiffs = ((x.xPos - node.xPos) for x in neighbors)
-      yDiffs = ((x.yPos - node.yPos) for x in neighbors)
+      # xDiffs = ((x.xPos - node.xPos) for x in neighbors)
+      # yDiffs = ((x.yPos - node.yPos) for x in neighbors)
 
-      newX = 0
-      newY = 0
+      # newX = 0
+      # newY = 0
 
-      if Math.abs(xDiffs[0]) > Math.abs(xDiffs[1])
-        newX = node.xPos + xDiffs[0] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
-      else
-        newX = node.xPos + xDiffs[1] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+      # if Math.abs(xDiffs[0]) > Math.abs(xDiffs[1])
+      #   newX = node.xPos + xDiffs[0] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+      # else
+      #   newX = node.xPos + xDiffs[1] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
 
-      if Math.abs(yDiffs[0]) > Math.abs(yDiffs[1])
-        newY = node.yPos + yDiffs[0] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
-      else
-        newY = node.yPos + yDiffs[1] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+      # if Math.abs(yDiffs[0]) > Math.abs(yDiffs[1])
+      #   newY = node.yPos + yDiffs[0] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+      # else
+      #   newY = node.yPos + yDiffs[1] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
 
-      if newX > this.canvas.width
-        newX = this.canvas.width
+      dist = getDistance(neighbors[0], neighbors[1])
 
-      if newY > this.canvas.height
-        newY = this.canvas.height
+      theta = Math.atan(
+        (neighbors[0].xPos - neighbors[0].yPos) / (neighbors[1].xPos - neighbors[1].yPos)
+        ) * (180 / Math.PI) + 60
 
-      if newX < 0
-        newX = 0
+      node.xPos = neighbors[0].xPos + (dist * Math.cos(theta))
 
-      if newY < 0
-        newY = 0
+      node.yPos = neighbors[0].yPos + (dist * Math.sin(theta))
 
-      newCircle = @createCircle(newX, newY, node.radius)
-      array.push newCircle
+      if node.xPos > this.canvas.width
+        node.xPos = this.canvas.width
 
-      node.alive = false
+      if node.yPos > this.canvas.height
+        node.yPos = this.canvas.height
+
+      if node.xPos < 0
+        node.xPos = 0
+
+      if node.yPos < 0
+        node.yPos = 0
 
 window.Conrand = Conrand

@@ -88,7 +88,11 @@
         results = [];
         for (j = 0, len1 = ref1.length; j < len1; j++) {
           node = ref1[j];
-          results.push(this.drawCircle(node));
+          if (node.alive === true) {
+            results.push(this.drawCircle(node));
+          } else {
+            results.push(void 0);
+          }
         }
         return results;
       }
@@ -122,7 +126,7 @@
               this.reflectTriangle(node, newArray, neighbors);
             }
             if (neighbors.length === 1) {
-              this.buildTriangle(node, newArray, neighbors[0]);
+              this.buildTriangle(node, neighbors[0], newArray);
             }
           }
         }
@@ -202,10 +206,12 @@
         return node.alive = false;
       }
 
-      buildTriangle(node, array, neighbor) {
-        var newCircle, newX, newY;
-        newX = neighbor.xPos + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
-        newY = neighbor.yPos + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
+      buildTriangle(a, b, array) {
+        var dist, newCircle, newX, newY, theta;
+        dist = getDistance(a, b);
+        theta = Math.atan((a.xPos - a.yPos) / (b.xPos - b.yPos)) * (180 / Math.PI) + 60;
+        newX = a.xPos + (dist * Math.cos(theta));
+        newY = a.yPos + (dist * Math.sin(theta));
         if (newX > this.canvas.width) {
           newX = this.canvas.width;
         }
@@ -218,57 +224,43 @@
         if (newY < 0) {
           newY = 0;
         }
-        newCircle = this.createCircle(newX, newY, node.radius);
+        newCircle = this.createCircle(newX, newY, a.radius);
         return array.push(newCircle);
       }
 
       reflectTriangle(node, array, neighbors) {
-        var newCircle, newX, newY, x, xDiffs, yDiffs;
-        xDiffs = (function() {
-          var i, len, results;
-          results = [];
-          for (i = 0, len = neighbors.length; i < len; i++) {
-            x = neighbors[i];
-            results.push(x.xPos - node.xPos);
-          }
-          return results;
-        })();
-        yDiffs = (function() {
-          var i, len, results;
-          results = [];
-          for (i = 0, len = neighbors.length; i < len; i++) {
-            x = neighbors[i];
-            results.push(x.yPos - node.yPos);
-          }
-          return results;
-        })();
-        newX = 0;
-        newY = 0;
-        if (Math.abs(xDiffs[0]) > Math.abs(xDiffs[1])) {
-          newX = node.xPos + xDiffs[0] + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
-        } else {
-          newX = node.xPos + xDiffs[1] + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
+        var dist, theta;
+        // xDiffs = ((x.xPos - node.xPos) for x in neighbors)
+        // yDiffs = ((x.yPos - node.yPos) for x in neighbors)
+
+        // newX = 0
+        // newY = 0
+
+        // if Math.abs(xDiffs[0]) > Math.abs(xDiffs[1])
+        //   newX = node.xPos + xDiffs[0] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+        // else
+        //   newX = node.xPos + xDiffs[1] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+
+        // if Math.abs(yDiffs[0]) > Math.abs(yDiffs[1])
+        //   newY = node.yPos + yDiffs[0] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+        // else
+        //   newY = node.yPos + yDiffs[1] + ((Math.random() - 0.5) * 2 * (@adjacentDistance / 2))
+        dist = getDistance(neighbors[0], neighbors[1]);
+        theta = Math.atan((neighbors[0].xPos - neighbors[0].yPos) / (neighbors[1].xPos - neighbors[1].yPos)) * (180 / Math.PI) + 60;
+        node.xPos = neighbors[0].xPos + (dist * Math.cos(theta));
+        node.yPos = neighbors[0].yPos + (dist * Math.sin(theta));
+        if (node.xPos > this.canvas.width) {
+          node.xPos = this.canvas.width;
         }
-        if (Math.abs(yDiffs[0]) > Math.abs(yDiffs[1])) {
-          newY = node.yPos + yDiffs[0] + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
-        } else {
-          newY = node.yPos + yDiffs[1] + ((Math.random() - 0.5) * 2 * (this.adjacentDistance / 2));
+        if (node.yPos > this.canvas.height) {
+          node.yPos = this.canvas.height;
         }
-        if (newX > this.canvas.width) {
-          newX = this.canvas.width;
+        if (node.xPos < 0) {
+          node.xPos = 0;
         }
-        if (newY > this.canvas.height) {
-          newY = this.canvas.height;
+        if (node.yPos < 0) {
+          return node.yPos = 0;
         }
-        if (newX < 0) {
-          newX = 0;
-        }
-        if (newY < 0) {
-          newY = 0;
-        }
-        newCircle = this.createCircle(newX, newY, node.radius);
-        array.push(newCircle);
-        return node.alive = false;
       }
 
     };
@@ -293,7 +285,7 @@
 
     Conrand.prototype.isolationDeadliness = 0.5;
 
-    Conrand.prototype.overcrowdingThreshold = 3;
+    Conrand.prototype.overcrowdingThreshold = 4;
 
     Conrand.prototype.overcrowdingDeadliness = 0.5;
 
