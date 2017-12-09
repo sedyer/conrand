@@ -6,8 +6,8 @@ class Conrand
 
   #graphics parameters
 
-  canvasheight: 400
-  canvaswidth: 400
+  canvasheight: 900
+  canvaswidth: 900
 
   #game parameters
   

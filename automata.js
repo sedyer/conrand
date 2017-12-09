@@ -272,9 +272,9 @@
     Conrand.prototype.drawingContext = null;
 
     //graphics parameters
-    Conrand.prototype.canvasheight = 400;
+    Conrand.prototype.canvasheight = 900;
 
-    Conrand.prototype.canvaswidth = 400;
+    Conrand.prototype.canvaswidth = 900;
 
     //game parameters
     Conrand.prototype.tickLength = 100;
