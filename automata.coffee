@@ -11,14 +11,13 @@ class Conrand
 
   #game parameters
   
-  tickLength: 100
-  initialnodes: 100
-  isolationThreshold: 1
+  tickLength: 150
+  initialnodes: 200
   isolationDeadliness: 0.5
-  overcrowdingThreshold: 4
+  maximumNeighbors: 3
   overcrowdingDeadliness: 0.5
-  adjacentDistance: 30
-  minimumDistance: 15
+  adjacentDistance: 90
+  vibration: 4
 
   constructor: ->
     @createCanvas()
@@ -43,10 +42,12 @@ class Conrand
     @createCircle(this.canvas.width * Math.random(), this.canvas.height * Math.random(), 2)
 
   createCircle: (x, y, r) ->
+    {
     xPos: x
     yPos: y
     radius: r
     alive: true
+    }
 
   tick: =>
 
@@ -66,13 +67,13 @@ class Conrand
 
       if neighbors.length == 2
 
-        @reflectTriangle(node, newArray, neighbors)
+        @reflectTriangle(node, neighbors)
 
       if neighbors.length == 1
 
         @buildTriangle(node, neighbors[0], newArray)
 
-      @wiggle(node)
+      @vibrate(node, @vibration)
 
     @nodeArray = newArray
 
@@ -84,12 +85,12 @@ class Conrand
 
       neighbors = @getNeighbors(node, newArray, @adjacentDistance)
 
-      if neighbors.length < @isolationThreshold
+      if neighbors.length == 0
         if Math.random() < @isolationDeadliness
           node.alive = false
 
-      if neighbors.length > @overcrowdingThreshold
-        if Math.random() < @overcrowdingThreshold
+      if neighbors.length > @maximumNeighbors
+        if Math.random() < @maximumNeighbors
           node.alive = false
 
     index = newArray.length - 1
@@ -123,10 +124,10 @@ class Conrand
 
     return neighbors
 
-  wiggle: (node) ->
+  vibrate: (node, factor) ->
 
-    node.xPos = node.xPos + ((Math.random() - 0.5) * 8)
-    node.yPos = node.yPos + ((Math.random() - 0.5) * 8)
+    node.xPos = node.xPos + ((Math.random() - 0.5) * 2 * factor)
+    node.yPos = node.yPos + ((Math.random() - 0.5) * 2 * factor)
 
     @rectifyNode node
 
@@ -159,21 +160,22 @@ class Conrand
     @rectifyNode newCircle
     array.push newCircle
 
-  reflectTriangle: (node, array, neighbors) ->
+  reflectTriangle: (node, neighbors) ->
+      
+      d1 = @getDistance(node, neighbors[0])
+      d2 = @getDistance(node, neighbors[1])
 
-      dist = @getDistance(neighbors[0], neighbors[1])
-
-      theta = Math.atan(
-        (neighbors[0].xPos - neighbors[0].yPos) / (neighbors[1].xPos - neighbors[1].yPos)
-        ) * (180 / Math.PI)
-
-      if neighbors[0].yPos < neighbors[1].yPos
-        theta = theta + 30
+      if d1 > d2
+        a = neighbors[1]
+        b = neighbors[0]
       else
-        theta = theta - 30
+        a = neighbors[0]
+        b = neighbors[1]
 
-      node.xPos = neighbors[0].xPos + (dist * Math.cos(theta))
-      node.yPos = neighbors[0].yPos + (dist * Math.sin(theta))
+      theta = 90 - Math.atan(d1 / d2) * (180 / Math.PI)
+
+      node.xPos = Math.cos(theta) * (a.xPos - b.xPos) - Math.sin(theta) * (a.yPos - b.yPos) + b.xPos
+      node.yPos = Math.sin(theta) * (a.xPos - b.xPos) + Math.cos(theta) * (a.yPos - b.yPos) + b.yPos
 
       @rectifyNode node
 

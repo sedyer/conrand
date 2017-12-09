@@ -56,12 +56,12 @@
           node = newArray[i];
           neighbors = this.getNeighbors(node, newArray, this.adjacentDistance);
           if (neighbors.length === 2) {
-            this.reflectTriangle(node, newArray, neighbors);
+            this.reflectTriangle(node, neighbors);
           }
           if (neighbors.length === 1) {
             this.buildTriangle(node, neighbors[0], newArray);
           }
-          this.wiggle(node);
+          this.vibrate(node, this.vibration);
         }
         return this.nodeArray = newArray;
       }
@@ -72,13 +72,13 @@
         for (i = 0, len = newArray.length; i < len; i++) {
           node = newArray[i];
           neighbors = this.getNeighbors(node, newArray, this.adjacentDistance);
-          if (neighbors.length < this.isolationThreshold) {
+          if (neighbors.length === 0) {
             if (Math.random() < this.isolationDeadliness) {
               node.alive = false;
             }
           }
-          if (neighbors.length > this.overcrowdingThreshold) {
-            if (Math.random() < this.overcrowdingThreshold) {
+          if (neighbors.length > this.maximumNeighbors) {
+            if (Math.random() < this.maximumNeighbors) {
               node.alive = false;
             }
           }
@@ -115,9 +115,9 @@
         return neighbors;
       }
 
-      wiggle(node) {
-        node.xPos = node.xPos + ((Math.random() - 0.5) * 8);
-        node.yPos = node.yPos + ((Math.random() - 0.5) * 8);
+      vibrate(node, factor) {
+        node.xPos = node.xPos + ((Math.random() - 0.5) * 2 * factor);
+        node.yPos = node.yPos + ((Math.random() - 0.5) * 2 * factor);
         return this.rectifyNode(node);
       }
 
@@ -149,17 +149,20 @@
         return array.push(newCircle);
       }
 
-      reflectTriangle(node, array, neighbors) {
-        var dist, theta;
-        dist = this.getDistance(neighbors[0], neighbors[1]);
-        theta = Math.atan((neighbors[0].xPos - neighbors[0].yPos) / (neighbors[1].xPos - neighbors[1].yPos)) * (180 / Math.PI);
-        if (neighbors[0].yPos < neighbors[1].yPos) {
-          theta = theta + 30;
+      reflectTriangle(node, neighbors) {
+        var a, b, d1, d2, theta;
+        d1 = this.getDistance(node, neighbors[0]);
+        d2 = this.getDistance(node, neighbors[1]);
+        if (d1 > d2) {
+          a = neighbors[1];
+          b = neighbors[0];
         } else {
-          theta = theta - 30;
+          a = neighbors[0];
+          b = neighbors[1];
         }
-        node.xPos = neighbors[0].xPos + (dist * Math.cos(theta));
-        node.yPos = neighbors[0].yPos + (dist * Math.sin(theta));
+        theta = 90 - Math.atan(d1 / d2) * (180 / Math.PI);
+        node.xPos = Math.cos(theta) * (a.xPos - b.xPos) - Math.sin(theta) * (a.yPos - b.yPos) + b.xPos;
+        node.yPos = Math.sin(theta) * (a.xPos - b.xPos) + Math.cos(theta) * (a.yPos - b.yPos) + b.yPos;
         return this.rectifyNode(node);
       }
 
@@ -231,21 +234,19 @@
     Conrand.prototype.canvaswidth = 900;
 
     //game parameters
-    Conrand.prototype.tickLength = 100;
+    Conrand.prototype.tickLength = 150;
 
-    Conrand.prototype.initialnodes = 100;
-
-    Conrand.prototype.isolationThreshold = 1;
+    Conrand.prototype.initialnodes = 200;
 
     Conrand.prototype.isolationDeadliness = 0.5;
 
-    Conrand.prototype.overcrowdingThreshold = 4;
+    Conrand.prototype.maximumNeighbors = 3;
 
     Conrand.prototype.overcrowdingDeadliness = 0.5;
 
-    Conrand.prototype.adjacentDistance = 30;
+    Conrand.prototype.adjacentDistance = 90;
 
-    Conrand.prototype.minimumDistance = 15;
+    Conrand.prototype.vibration = 4;
 
     return Conrand;
 
