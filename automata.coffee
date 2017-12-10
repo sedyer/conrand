@@ -11,13 +11,10 @@ class Conrand
 
   #game parameters
   
-  tickLength: 150
-  initialnodes: 200
-  isolationDeadliness: 0.5
-  maximumNeighbors: 3
-  overcrowdingDeadliness: 0.5
-  adjacentDistance: 90
-  vibration: 4
+  tickLength: 100
+  initialnodes: 100
+  adjacentDistance: 32
+  vibration: 2
 
   constructor: ->
     @createCanvas()
@@ -61,47 +58,58 @@ class Conrand
 
     newArray = @nodeArray
 
-    for node in newArray
-      
-      neighbors = @getNeighbors(node, newArray, @adjacentDistance)
-
-      if neighbors.length == 2
-
-        @reflectTriangle(node, neighbors)
-
-      if neighbors.length == 1
-
-        @buildTriangle(node, neighbors[0], newArray)
+    for node in @nodeArray
 
       @vibrate(node, @vibration)
+      
+      neighbors = @getNeighbors(node, @nodeArray, @adjacentDistance)
 
-    @nodeArray = newArray
+      if neighbors.length > 3
+
+          node.alive = false
+
+      else if neighbors.length == 2
+
+        a = @getNeighbors(neighbors[0], @nodeArray, @adjacentDistance).length == 2
+        b = @getNeighbors(neighbors[1], @nodeArray, @adjacentDistance).length == 2
+
+        if a and b
+
+          adist = @getDistance(node, neighbors[0])
+          bdist = @getDistance(node, neighbors[1])
+
+          if adist > bdist
+            newNode = @thirdNode(node, neighbors[0], newArray)
+            newArray.push(newNode)
+            neighbors[1].alive = false
+          else if adist < bdist
+            newNode = @thirdNode(node, neighbors[1], newArray)
+            newArray.push(newNode)
+            neighbors[0].alive = false
+
+      else if neighbors.length == 1
+      
+        a = @getNeighbors(neighbors[0], @nodeArray, @adjacentDistance).length == 1
+
+        if a
+          newNode = @thirdNode(node, neighbors[0])
+          newArray.push(newNode)
+      
+      else if neighbors.length == 0
+
+          node.alive = false
+
+    @nodeArray.concat(newArray)
 
   cull: ->
 
-    newArray = @nodeArray
-
-    for node in newArray
-
-      neighbors = @getNeighbors(node, newArray, @adjacentDistance)
-
-      if neighbors.length == 0
-        if Math.random() < @isolationDeadliness
-          node.alive = false
-
-      if neighbors.length > @maximumNeighbors
-        if Math.random() < @maximumNeighbors
-          node.alive = false
-
-    index = newArray.length - 1
+    index = @nodeArray.length - 1
 
     while (index >= 0)
-      if newArray[index].alive is false
-        newArray.splice(index, 1)
+      if @nodeArray[index].alive is false
+        @nodeArray.splice(index, 1)
         index--
       index--
-
-    @nodeArray = newArray
 
   getDistance: (a, b) ->
 
@@ -116,10 +124,10 @@ class Conrand
     neighbors = []
 
     for x in array
-
+      
         d = @getDistance(node, x)
 
-        if d < distance and d > 0
+        if d < distance and d > 1
             neighbors.push x
 
     return neighbors
@@ -145,51 +153,34 @@ class Conrand
     if node.yPos < 0
       node.yPos = 0
 
-  buildTriangle: (a, b, array) ->
+  thirdNode: (node, pivot) ->
 
-    theta = 60
+    s = Math.sin(Math.PI / 3)
+    c = Math.cos(Math.PI / 3)
 
-    if Math.random() < 0.5
-      theta = 300
+    tX = node.xPos - pivot.xPos
+    tY = node.yPos - pivot.yPos
 
-    newX = Math.cos(theta) * (a.xPos - b.xPos) - Math.sin(theta) * (a.yPos - b.yPos) + b.xPos
+    newX = (tX * c) - (tY * s)
+    newY = (tX * s) + (tY * c)
 
-    newY = Math.sin(theta) * (a.xPos - b.xPos) + Math.cos(theta) * (a.yPos - b.yPos) + b.yPos
+    newX = newX + pivot.xPos
+    newY = newY + pivot.yPos
 
-    newCircle = @createCircle(newX, newY, a.radius)
+    newCircle = @createCircle(newX, newY, node.radius)
     @rectifyNode newCircle
-    array.push newCircle
 
-  reflectTriangle: (node, neighbors) ->
-      
-      d1 = @getDistance(node, neighbors[0])
-      d2 = @getDistance(node, neighbors[1])
-
-      if d1 > d2
-        a = neighbors[1]
-        b = neighbors[0]
-      else
-        a = neighbors[0]
-        b = neighbors[1]
-
-      theta = 90 - Math.atan(d1 / d2) * (180 / Math.PI)
-
-      node.xPos = Math.cos(theta) * (a.xPos - b.xPos) - Math.sin(theta) * (a.yPos - b.yPos) + b.xPos
-      node.yPos = Math.sin(theta) * (a.xPos - b.xPos) + Math.cos(theta) * (a.yPos - b.yPos) + b.yPos
-
-      @rectifyNode node
+    return newCircle
 
   draw: ->
     
     @drawingContext.clearRect(0, 0, @canvas.width, @canvas.height)
 
     for node in @nodeArray
-      if node.alive is true
-        @drawConnections(node, @nodeArray, @adjacentDistance)
+      @drawConnections(node, @nodeArray, @adjacentDistance)
 
     for node in @nodeArray
-      if node.alive is true
-        @drawCircle node
+      @drawCircle node
 
   drawConnections: (node, array, distance) ->
 
@@ -199,6 +190,11 @@ class Conrand
     context.strokeStyle = 'rgb(242, 198, 65)'
 
     for x in neighbors
+      if x.alive is true
+        context.strokeStyle = 'rgb(242, 198, 65)'
+      else
+        context.strokeStyle = 'grey'
+
       context.beginPath()
       context.moveTo(node.xPos, node.yPos)
       context.lineTo(x.xPos, x.yPos)

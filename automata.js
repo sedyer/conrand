@@ -50,48 +50,56 @@
       }
 
       evolve() {
-        var i, len, neighbors, newArray, node;
+        var a, adist, b, bdist, i, len, neighbors, newArray, newNode, node, ref;
         newArray = this.nodeArray;
-        for (i = 0, len = newArray.length; i < len; i++) {
-          node = newArray[i];
-          neighbors = this.getNeighbors(node, newArray, this.adjacentDistance);
-          if (neighbors.length === 2) {
-            this.reflectTriangle(node, neighbors);
-          }
-          if (neighbors.length === 1) {
-            this.buildTriangle(node, neighbors[0], newArray);
-          }
+        ref = this.nodeArray;
+        for (i = 0, len = ref.length; i < len; i++) {
+          node = ref[i];
           this.vibrate(node, this.vibration);
+          neighbors = this.getNeighbors(node, this.nodeArray, this.adjacentDistance);
+          if (neighbors.length > 3) {
+            node.alive = false;
+          } else if (neighbors.length === 2) {
+            a = this.getNeighbors(neighbors[0], this.nodeArray, this.adjacentDistance).length === 2;
+            b = this.getNeighbors(neighbors[1], this.nodeArray, this.adjacentDistance).length === 2;
+            if (a && b) {
+              adist = this.getDistance(node, neighbors[0]);
+              bdist = this.getDistance(node, neighbors[1]);
+              if (adist > bdist) {
+                newNode = this.thirdNode(node, neighbors[0], newArray);
+                newArray.push(newNode);
+                neighbors[1].alive = false;
+              } else if (adist < bdist) {
+                newNode = this.thirdNode(node, neighbors[1], newArray);
+                newArray.push(newNode);
+                neighbors[0].alive = false;
+              }
+            }
+          } else if (neighbors.length === 1) {
+            a = this.getNeighbors(neighbors[0], this.nodeArray, this.adjacentDistance).length === 1;
+            if (a) {
+              newNode = this.thirdNode(node, neighbors[0]);
+              newArray.push(newNode);
+            }
+          } else if (neighbors.length === 0) {
+            node.alive = false;
+          }
         }
-        return this.nodeArray = newArray;
+        return this.nodeArray.concat(newArray);
       }
 
       cull() {
-        var i, index, len, neighbors, newArray, node;
-        newArray = this.nodeArray;
-        for (i = 0, len = newArray.length; i < len; i++) {
-          node = newArray[i];
-          neighbors = this.getNeighbors(node, newArray, this.adjacentDistance);
-          if (neighbors.length === 0) {
-            if (Math.random() < this.isolationDeadliness) {
-              node.alive = false;
-            }
-          }
-          if (neighbors.length > this.maximumNeighbors) {
-            if (Math.random() < this.maximumNeighbors) {
-              node.alive = false;
-            }
-          }
-        }
-        index = newArray.length - 1;
+        var index, results;
+        index = this.nodeArray.length - 1;
+        results = [];
         while (index >= 0) {
-          if (newArray[index].alive === false) {
-            newArray.splice(index, 1);
+          if (this.nodeArray[index].alive === false) {
+            this.nodeArray.splice(index, 1);
             index--;
           }
-          index--;
+          results.push(index--);
         }
-        return this.nodeArray = newArray;
+        return results;
       }
 
       getDistance(a, b) {
@@ -108,7 +116,7 @@
         for (i = 0, len = array.length; i < len; i++) {
           x = array[i];
           d = this.getDistance(node, x);
-          if (d < distance && d > 0) {
+          if (d < distance && d > 1) {
             neighbors.push(x);
           }
         }
@@ -136,34 +144,19 @@
         }
       }
 
-      buildTriangle(a, b, array) {
-        var newCircle, newX, newY, theta;
-        theta = 60;
-        if (Math.random() < 0.5) {
-          theta = 300;
-        }
-        newX = Math.cos(theta) * (a.xPos - b.xPos) - Math.sin(theta) * (a.yPos - b.yPos) + b.xPos;
-        newY = Math.sin(theta) * (a.xPos - b.xPos) + Math.cos(theta) * (a.yPos - b.yPos) + b.yPos;
-        newCircle = this.createCircle(newX, newY, a.radius);
+      thirdNode(node, pivot) {
+        var c, newCircle, newX, newY, s, tX, tY;
+        s = Math.sin(Math.PI / 3);
+        c = Math.cos(Math.PI / 3);
+        tX = node.xPos - pivot.xPos;
+        tY = node.yPos - pivot.yPos;
+        newX = (tX * c) - (tY * s);
+        newY = (tX * s) + (tY * c);
+        newX = newX + pivot.xPos;
+        newY = newY + pivot.yPos;
+        newCircle = this.createCircle(newX, newY, node.radius);
         this.rectifyNode(newCircle);
-        return array.push(newCircle);
-      }
-
-      reflectTriangle(node, neighbors) {
-        var a, b, d1, d2, theta;
-        d1 = this.getDistance(node, neighbors[0]);
-        d2 = this.getDistance(node, neighbors[1]);
-        if (d1 > d2) {
-          a = neighbors[1];
-          b = neighbors[0];
-        } else {
-          a = neighbors[0];
-          b = neighbors[1];
-        }
-        theta = 90 - Math.atan(d1 / d2) * (180 / Math.PI);
-        node.xPos = Math.cos(theta) * (a.xPos - b.xPos) - Math.sin(theta) * (a.yPos - b.yPos) + b.xPos;
-        node.yPos = Math.sin(theta) * (a.xPos - b.xPos) + Math.cos(theta) * (a.yPos - b.yPos) + b.yPos;
-        return this.rectifyNode(node);
+        return newCircle;
       }
 
       draw() {
@@ -172,19 +165,13 @@
         ref = this.nodeArray;
         for (i = 0, len = ref.length; i < len; i++) {
           node = ref[i];
-          if (node.alive === true) {
-            this.drawConnections(node, this.nodeArray, this.adjacentDistance);
-          }
+          this.drawConnections(node, this.nodeArray, this.adjacentDistance);
         }
         ref1 = this.nodeArray;
         results = [];
         for (j = 0, len1 = ref1.length; j < len1; j++) {
           node = ref1[j];
-          if (node.alive === true) {
-            results.push(this.drawCircle(node));
-          } else {
-            results.push(void 0);
-          }
+          results.push(this.drawCircle(node));
         }
         return results;
       }
@@ -198,6 +185,11 @@
         results = [];
         for (i = 0, len = neighbors.length; i < len; i++) {
           x = neighbors[i];
+          if (x.alive === true) {
+            context.strokeStyle = 'rgb(242, 198, 65)';
+          } else {
+            context.strokeStyle = 'grey';
+          }
           context.beginPath();
           context.moveTo(node.xPos, node.yPos);
           context.lineTo(x.xPos, x.yPos);
@@ -234,19 +226,13 @@
     Conrand.prototype.canvaswidth = 900;
 
     //game parameters
-    Conrand.prototype.tickLength = 150;
+    Conrand.prototype.tickLength = 100;
 
-    Conrand.prototype.initialnodes = 200;
+    Conrand.prototype.initialnodes = 100;
 
-    Conrand.prototype.isolationDeadliness = 0.5;
+    Conrand.prototype.adjacentDistance = 32;
 
-    Conrand.prototype.maximumNeighbors = 3;
-
-    Conrand.prototype.overcrowdingDeadliness = 0.5;
-
-    Conrand.prototype.adjacentDistance = 90;
-
-    Conrand.prototype.vibration = 4;
+    Conrand.prototype.vibration = 2;
 
     return Conrand;
 
