@@ -43,40 +43,63 @@
       }
 
       tick() {
-        var i, len, node, ref;
-        ref = this.nodeArray;
-        for (i = 0, len = ref.length; i < len; i++) {
-          node = ref[i];
-          this.vibrate(node, this.vibration);
-        }
-        this.draw();
+        this.vibrate();
         this.evolve();
         this.cull();
+        this.draw();
         return setTimeout(this.tick, this.tickLength);
       }
 
+      vibrate() {
+        var i, len, node, ref, results;
+        ref = this.nodeArray;
+        results = [];
+        for (i = 0, len = ref.length; i < len; i++) {
+          node = ref[i];
+          if (node.alive === true) {
+            node.xPos = node.xPos + ((Math.random() - 0.5) * 2 * this.vibration);
+            node.yPos = node.yPos + ((Math.random() - 0.5) * 2 * this.vibration);
+            results.push(this.rectifyNode(node));
+          } else {
+            results.push(void 0);
+          }
+        }
+        return results;
+      }
+
       evolve() {
-        var i, j, len, len1, neighbor, neighbors, newArray, newNode, node, ref, theta;
-        newArray = this.nodeArray;
+        var i, j, k, len, len1, len2, neighbor, neighbors, newArray, newNode, node, ref, test, theta;
+        newArray = [];
         ref = this.nodeArray;
         for (i = 0, len = ref.length; i < len; i++) {
           node = ref[i];
           neighbors = this.getNeighbors(node, this.nodeArray, this.adjacentDistance);
-          if (neighbors.length > 0 && neighbors.length < 3) {
-            theta = Math.PI / 3;
+          if (neighbors.length === 0) {
+            node.alive = false;
+          } else if (neighbors.length < 3) {
+            theta = (Math.PI / 3) * neighbors.length;
+            test = true;
             for (j = 0, len1 = neighbors.length; j < len1; j++) {
               neighbor = neighbors[j];
-              if (this.getNeighbors(neighbor, this.nodeArray, this.adjacentDistance).length === neighbors.length) {
-                theta = -theta;
-                newNode = this.thirdNode(neighbor, node, theta);
+              if (this.getNeighbors(neighbor, this.nodeArray, this.adjacentDistance).length !== neighbors.length) {
+                test = false;
+                break;
+              }
+            }
+            if (test === true) {
+              for (k = 0, len2 = neighbors.length; k < len2; k++) {
+                neighbor = neighbors[k];
+                newNode = this.thirdNode(node, neighbor, theta);
+                newArray.push(newNode);
+                newNode = this.thirdNode(neighbor, newNode, theta);
                 newArray.push(newNode);
               }
             }
-          } else {
+          } else if (neighbors.length > 3) {
             node.alive = false;
           }
         }
-        return this.nodeArray.concat(newArray);
+        return this.nodeArray = this.nodeArray.concat(newArray);
       }
 
       cull() {
@@ -108,18 +131,12 @@
           x = array[i];
           if (x.alive === true) {
             d = this.getDistance(node, x);
-            if (d < distance && d > 0) {
+            if (d < distance && d > 1) {
               neighbors.push(x);
             }
           }
         }
         return neighbors;
-      }
-
-      vibrate(node, factor) {
-        node.xPos = node.xPos + ((Math.random() - 0.5) * 2 * factor);
-        node.yPos = node.yPos + ((Math.random() - 0.5) * 2 * factor);
-        return this.rectifyNode(node);
       }
 
       rectifyNode(node) {
@@ -153,18 +170,18 @@
       }
 
       draw() {
-        var i, j, len, len1, node, ref, ref1, results;
+        var i, len, node, ref, results;
         this.drawingContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
         ref = this.nodeArray;
+        results = [];
         for (i = 0, len = ref.length; i < len; i++) {
           node = ref[i];
-          this.drawConnections(node, this.nodeArray, this.adjacentDistance);
-        }
-        ref1 = this.nodeArray;
-        results = [];
-        for (j = 0, len1 = ref1.length; j < len1; j++) {
-          node = ref1[j];
-          results.push(this.drawCircle(node));
+          if (node.alive === true) {
+            this.drawConnections(node, this.nodeArray, this.adjacentDistance);
+            results.push(this.drawCircle(node));
+          } else {
+            results.push(void 0);
+          }
         }
         return results;
       }
@@ -175,28 +192,21 @@
         context = this.drawingContext;
         context.lineWidth = 1;
         context.strokeStyle = 'rgb(242, 198, 65)';
-        results = [];
-        for (i = 0, len = neighbors.length; i < len; i++) {
-          x = neighbors[i];
-          if (x.alive === true) {
-            context.strokeStyle = 'rgb(242, 198, 65)';
-          } else {
-            context.strokeStyle = 'grey';
+        if (neighbors.length < 4) {
+          results = [];
+          for (i = 0, len = neighbors.length; i < len; i++) {
+            x = neighbors[i];
+            context.beginPath();
+            context.moveTo(node.xPos, node.yPos);
+            context.lineTo(x.xPos, x.yPos);
+            results.push(context.stroke());
           }
-          context.beginPath();
-          context.moveTo(node.xPos, node.yPos);
-          context.lineTo(x.xPos, x.yPos);
-          results.push(context.stroke());
+          return results;
         }
-        return results;
       }
 
       drawCircle(circle) {
-        if (circle.alive === true) {
-          this.drawingContext.fillStyle = 'white';
-        } else {
-          this.drawingContext.fillStyle = 'grey';
-        }
+        this.drawingContext.fillStyle = 'white';
         this.drawingContext.lineWidth = 2;
         this.drawingContext.strokeStyle = 'rgba(242, 198, 65, 0.1)';
         this.drawingContext.beginPath();
@@ -221,9 +231,9 @@
     //game parameters
     Conrand.prototype.tickLength = 100;
 
-    Conrand.prototype.initialnodes = 50;
+    Conrand.prototype.initialnodes = 200;
 
-    Conrand.prototype.adjacentDistance = 64;
+    Conrand.prototype.adjacentDistance = 36;
 
     Conrand.prototype.vibration = 4;
 
