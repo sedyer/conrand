@@ -50,7 +50,7 @@
       }
 
       evolve() {
-        var a, adist, b, bdist, i, len, neighbors, newArray, newNode, node, ref;
+        var a, b, i, len, neighbors, newArray, newNode, node, ref;
         newArray = this.nodeArray;
         ref = this.nodeArray;
         for (i = 0, len = ref.length; i < len; i++) {
@@ -63,22 +63,32 @@
             a = this.getNeighbors(neighbors[0], this.nodeArray, this.adjacentDistance).length === 2;
             b = this.getNeighbors(neighbors[1], this.nodeArray, this.adjacentDistance).length === 2;
             if (a && b) {
-              adist = this.getDistance(node, neighbors[0]);
-              bdist = this.getDistance(node, neighbors[1]);
-              if (adist > bdist) {
-                newNode = this.thirdNode(node, neighbors[0], newArray);
-                newArray.push(newNode);
-                neighbors[1].alive = false;
-              } else if (adist < bdist) {
-                newNode = this.thirdNode(node, neighbors[1], newArray);
-                newArray.push(newNode);
-                neighbors[0].alive = false;
-              }
+              newNode = this.thirdNode(node, neighbors[0], Math.PI / 3);
+              newArray.push(newNode);
+              newNode = this.thirdNode(neighbors[0], neighbors[1], Math.PI / 3);
+              newArray.push(newNode);
+              newNode = this.thirdNode(neighbors[1], node, Math.PI / 3);
+              newArray.push(newNode);
             }
+          // adist = @getDistance(node, neighbors[0])
+          // bdist = @getDistance(node, neighbors[1])
+
+          // if adist > bdist
+          //   newNode = @thirdNode(node, neighbors[0], Math.PI / 3)
+          //   newArray.push(newNode)
+          //   node.alive = false
+          //   neighbors[1].alive = false
+          // else
+          //   newNode = @thirdNode(node, neighbors[1], -Math.PI / 3)
+          //   newArray.push(newNode)
+          //   node.alive = false
+          //   neighbors[0].alive = false
           } else if (neighbors.length === 1) {
+            // newNode = @thirdNode(node, neighbors[0], (Math.random() - 0.5) * 4 * Math.PI)
+            // newArray.push(newNode)
             a = this.getNeighbors(neighbors[0], this.nodeArray, this.adjacentDistance).length === 1;
             if (a) {
-              newNode = this.thirdNode(node, neighbors[0]);
+              newNode = this.thirdNode(node, neighbors[0], Math.PI / 3);
               newArray.push(newNode);
             }
           } else if (neighbors.length === 0) {
@@ -144,10 +154,10 @@
         }
       }
 
-      thirdNode(node, pivot) {
+      thirdNode(node, pivot, theta) {
         var c, newCircle, newX, newY, s, tX, tY;
-        s = Math.sin(Math.PI / 3);
-        c = Math.cos(Math.PI / 3);
+        s = Math.sin(theta);
+        c = Math.cos(theta);
         tX = node.xPos - pivot.xPos;
         tY = node.yPos - pivot.yPos;
         newX = (tX * c) - (tY * s);
@@ -230,9 +240,9 @@
 
     Conrand.prototype.initialnodes = 100;
 
-    Conrand.prototype.adjacentDistance = 32;
+    Conrand.prototype.adjacentDistance = 64;
 
-    Conrand.prototype.vibration = 2;
+    Conrand.prototype.vibration = 4;
 
     return Conrand;
 

@@ -13,8 +13,8 @@ class Conrand
   
   tickLength: 100
   initialnodes: 100
-  adjacentDistance: 32
-  vibration: 2
+  adjacentDistance: 64
+  vibration: 4
 
   constructor: ->
     @createCanvas()
@@ -74,30 +74,40 @@ class Conrand
         b = @getNeighbors(neighbors[1], @nodeArray, @adjacentDistance).length == 2
 
         if a and b
+          newNode = @thirdNode(node, neighbors[0], (Math.PI / 3))
+          newArray.push(newNode)
+          newNode = @thirdNode(neighbors[0], neighbors[1], (Math.PI / 3))
+          newArray.push(newNode)
+          newNode = @thirdNode(neighbors[1], node, (Math.PI / 3))
+          newArray.push(newNode)
 
-          adist = @getDistance(node, neighbors[0])
-          bdist = @getDistance(node, neighbors[1])
+          # adist = @getDistance(node, neighbors[0])
+          # bdist = @getDistance(node, neighbors[1])
 
-          if adist > bdist
-            newNode = @thirdNode(node, neighbors[0], newArray)
-            newArray.push(newNode)
-            neighbors[1].alive = false
-          else if adist < bdist
-            newNode = @thirdNode(node, neighbors[1], newArray)
-            newArray.push(newNode)
-            neighbors[0].alive = false
+          # if adist > bdist
+          #   newNode = @thirdNode(node, neighbors[0], Math.PI / 3)
+          #   newArray.push(newNode)
+          #   node.alive = false
+          #   neighbors[1].alive = false
+          # else
+          #   newNode = @thirdNode(node, neighbors[1], -Math.PI / 3)
+          #   newArray.push(newNode)
+          #   node.alive = false
+          #   neighbors[0].alive = false
 
       else if neighbors.length == 1
+
+        # newNode = @thirdNode(node, neighbors[0], (Math.random() - 0.5) * 4 * Math.PI)
+        # newArray.push(newNode)
       
         a = @getNeighbors(neighbors[0], @nodeArray, @adjacentDistance).length == 1
 
         if a
-          newNode = @thirdNode(node, neighbors[0])
+          newNode = @thirdNode(node, neighbors[0], (Math.PI / 3))
           newArray.push(newNode)
-      
-      else if neighbors.length == 0
 
-          node.alive = false
+      else if neighbors.length == 0
+        node.alive = false
 
     @nodeArray.concat(newArray)
 
@@ -153,10 +163,10 @@ class Conrand
     if node.yPos < 0
       node.yPos = 0
 
-  thirdNode: (node, pivot) ->
+  thirdNode: (node, pivot, theta) ->
 
-    s = Math.sin(Math.PI / 3)
-    c = Math.cos(Math.PI / 3)
+    s = Math.sin(theta)
+    c = Math.cos(theta)
 
     tX = node.xPos - pivot.xPos
     tY = node.yPos - pivot.yPos
