@@ -12,7 +12,7 @@ class Conrand
   #game parameters
   
   tickLength: 100
-  initialnodes: 100
+  initialnodes: 50
   adjacentDistance: 64
   vibration: 4
 
@@ -47,10 +47,14 @@ class Conrand
     }
 
   tick: =>
+    
+    for node in @nodeArray
 
+      @vibrate(node, @vibration)
+
+    @draw()
     @evolve()
     @cull()
-    @draw()
 
     setTimeout @tick, @tickLength
 
@@ -59,54 +63,21 @@ class Conrand
     newArray = @nodeArray
 
     for node in @nodeArray
-
-      @vibrate(node, @vibration)
       
       neighbors = @getNeighbors(node, @nodeArray, @adjacentDistance)
 
-      if neighbors.length > 3
+      if neighbors.length > 0 and neighbors.length < 3
 
-          node.alive = false
+        theta = Math.PI / 3
 
-      else if neighbors.length == 2
+        for neighbor in neighbors
+          if @getNeighbors(neighbor, @nodeArray, @adjacentDistance).length == neighbors.length
+            theta = -theta
+            newNode = @thirdNode(neighbor, node, theta)
+            newArray.push(newNode)
 
-        a = @getNeighbors(neighbors[0], @nodeArray, @adjacentDistance).length == 2
-        b = @getNeighbors(neighbors[1], @nodeArray, @adjacentDistance).length == 2
+      else
 
-        if a and b
-          newNode = @thirdNode(node, neighbors[0], (Math.PI / 3))
-          newArray.push(newNode)
-          newNode = @thirdNode(neighbors[0], neighbors[1], (Math.PI / 3))
-          newArray.push(newNode)
-          newNode = @thirdNode(neighbors[1], node, (Math.PI / 3))
-          newArray.push(newNode)
-
-          # adist = @getDistance(node, neighbors[0])
-          # bdist = @getDistance(node, neighbors[1])
-
-          # if adist > bdist
-          #   newNode = @thirdNode(node, neighbors[0], Math.PI / 3)
-          #   newArray.push(newNode)
-          #   node.alive = false
-          #   neighbors[1].alive = false
-          # else
-          #   newNode = @thirdNode(node, neighbors[1], -Math.PI / 3)
-          #   newArray.push(newNode)
-          #   node.alive = false
-          #   neighbors[0].alive = false
-
-      else if neighbors.length == 1
-
-        # newNode = @thirdNode(node, neighbors[0], (Math.random() - 0.5) * 4 * Math.PI)
-        # newArray.push(newNode)
-      
-        a = @getNeighbors(neighbors[0], @nodeArray, @adjacentDistance).length == 1
-
-        if a
-          newNode = @thirdNode(node, neighbors[0], (Math.PI / 3))
-          newArray.push(newNode)
-
-      else if neighbors.length == 0
         node.alive = false
 
     @nodeArray.concat(newArray)
@@ -134,10 +105,12 @@ class Conrand
     neighbors = []
 
     for x in array
+
+      if x.alive is true
       
         d = @getDistance(node, x)
 
-        if d < distance and d > 1
+        if d < distance and d > 0
             neighbors.push x
 
     return neighbors

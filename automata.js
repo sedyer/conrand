@@ -43,55 +43,36 @@
       }
 
       tick() {
-        this.evolve();
-        this.cull();
-        this.draw();
-        return setTimeout(this.tick, this.tickLength);
-      }
-
-      evolve() {
-        var a, b, i, len, neighbors, newArray, newNode, node, ref;
-        newArray = this.nodeArray;
+        var i, len, node, ref;
         ref = this.nodeArray;
         for (i = 0, len = ref.length; i < len; i++) {
           node = ref[i];
           this.vibrate(node, this.vibration);
-          neighbors = this.getNeighbors(node, this.nodeArray, this.adjacentDistance);
-          if (neighbors.length > 3) {
-            node.alive = false;
-          } else if (neighbors.length === 2) {
-            a = this.getNeighbors(neighbors[0], this.nodeArray, this.adjacentDistance).length === 2;
-            b = this.getNeighbors(neighbors[1], this.nodeArray, this.adjacentDistance).length === 2;
-            if (a && b) {
-              newNode = this.thirdNode(node, neighbors[0], Math.PI / 3);
-              newArray.push(newNode);
-              newNode = this.thirdNode(neighbors[0], neighbors[1], Math.PI / 3);
-              newArray.push(newNode);
-              newNode = this.thirdNode(neighbors[1], node, Math.PI / 3);
-              newArray.push(newNode);
-            }
-          // adist = @getDistance(node, neighbors[0])
-          // bdist = @getDistance(node, neighbors[1])
+        }
+        this.draw();
+        this.evolve();
+        this.cull();
+        return setTimeout(this.tick, this.tickLength);
+      }
 
-          // if adist > bdist
-          //   newNode = @thirdNode(node, neighbors[0], Math.PI / 3)
-          //   newArray.push(newNode)
-          //   node.alive = false
-          //   neighbors[1].alive = false
-          // else
-          //   newNode = @thirdNode(node, neighbors[1], -Math.PI / 3)
-          //   newArray.push(newNode)
-          //   node.alive = false
-          //   neighbors[0].alive = false
-          } else if (neighbors.length === 1) {
-            // newNode = @thirdNode(node, neighbors[0], (Math.random() - 0.5) * 4 * Math.PI)
-            // newArray.push(newNode)
-            a = this.getNeighbors(neighbors[0], this.nodeArray, this.adjacentDistance).length === 1;
-            if (a) {
-              newNode = this.thirdNode(node, neighbors[0], Math.PI / 3);
-              newArray.push(newNode);
+      evolve() {
+        var i, j, len, len1, neighbor, neighbors, newArray, newNode, node, ref, theta;
+        newArray = this.nodeArray;
+        ref = this.nodeArray;
+        for (i = 0, len = ref.length; i < len; i++) {
+          node = ref[i];
+          neighbors = this.getNeighbors(node, this.nodeArray, this.adjacentDistance);
+          if (neighbors.length > 0 && neighbors.length < 3) {
+            theta = Math.PI / 3;
+            for (j = 0, len1 = neighbors.length; j < len1; j++) {
+              neighbor = neighbors[j];
+              if (this.getNeighbors(neighbor, this.nodeArray, this.adjacentDistance).length === neighbors.length) {
+                theta = -theta;
+                newNode = this.thirdNode(neighbor, node, theta);
+                newArray.push(newNode);
+              }
             }
-          } else if (neighbors.length === 0) {
+          } else {
             node.alive = false;
           }
         }
@@ -125,9 +106,11 @@
         neighbors = [];
         for (i = 0, len = array.length; i < len; i++) {
           x = array[i];
-          d = this.getDistance(node, x);
-          if (d < distance && d > 1) {
-            neighbors.push(x);
+          if (x.alive === true) {
+            d = this.getDistance(node, x);
+            if (d < distance && d > 0) {
+              neighbors.push(x);
+            }
           }
         }
         return neighbors;
@@ -238,7 +221,7 @@
     //game parameters
     Conrand.prototype.tickLength = 100;
 
-    Conrand.prototype.initialnodes = 100;
+    Conrand.prototype.initialnodes = 50;
 
     Conrand.prototype.adjacentDistance = 64;
 
