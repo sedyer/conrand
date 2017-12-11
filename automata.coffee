@@ -43,9 +43,9 @@ class Conrand
 
   tick: =>
     
+    @cull()
     @vibrate()
     @evolve()
-    @cull()
     @draw()
 
     setTimeout @tick, @tickLength
@@ -53,10 +53,9 @@ class Conrand
   vibrate: ->
 
     for node in @nodeArray
-      if node.alive is true
-        node.xPos = node.xPos + ((Math.random() - 0.5) * 2 * @vibration)
-        node.yPos = node.yPos + ((Math.random() - 0.5) * 2 * @vibration)
-        @rectifyNode node
+      node.xPos = node.xPos + ((Math.random() - 0.5) * 2 * @vibration)
+      node.yPos = node.yPos + ((Math.random() - 0.5) * 2 * @vibration)
+      @rectifyNode node
 
   evolve: ->
 
@@ -64,40 +63,39 @@ class Conrand
 
     for node in @nodeArray
 
-      neighbors = @getNeighbors(node, @nodeArray, @adjacentDistance)
+      if node.alive is true
 
-      if neighbors.length == 0
+        neighbors = @getNeighbors(node, @nodeArray, @adjacentDistance)
 
-        node.alive = false
-
-      else if neighbors.length < 3
-
-        theta = (Math.PI / 3) * neighbors.length
         test = true
 
         for neighbor in neighbors
 
           if @getNeighbors(neighbor, @nodeArray, @adjacentDistance).length != neighbors.length
+          
             test = false
             break
 
         if test is true
 
-          for neighbor in neighbors
+          theta = (Math.PI / 3) * neighbors.length
 
+          for neighbor in neighbors
+            
             newNode = @thirdNode(node, neighbor, theta)
             newArray.push(newNode)
-
-            newNode = @thirdNode(neighbor, newNode, theta)
-            newArray.push(newNode)
-
-      else if neighbors.length > 3
-
-        node.alive = false
 
     @nodeArray = @nodeArray.concat(newArray)
 
   cull: ->
+
+    for node in @nodeArray
+
+      neighbors = @getNeighbors(node, @nodeArray, @adjacentDistance)
+
+      if neighbors.length == 0 or neighbors.length > 5
+
+        node.alive = false
 
     index = @nodeArray.length - 1
 
@@ -121,12 +119,10 @@ class Conrand
 
     for x in array
 
-      if x.alive is true
-      
-        d = @getDistance(node, x)
+      d = @getDistance(node, x)
 
-        if d < distance and d > 1
-            neighbors.push x
+      if d < distance and d > 1
+        neighbors.push x
 
     return neighbors
 
@@ -168,25 +164,30 @@ class Conrand
     @drawingContext.clearRect(0, 0, @canvas.width, @canvas.height)
 
     for node in @nodeArray
-      if node.alive is true
-        @drawConnections(node, @nodeArray, @adjacentDistance)
-        @drawCircle node
+      @drawConnections(node, @nodeArray, @adjacentDistance)
+      @drawCircle node
 
   drawConnections: (node, array, distance) ->
 
     neighbors = @getNeighbors(node, array, distance)
     context = @drawingContext
     context.lineWidth = 1
-    context.strokeStyle = 'rgb(242, 198, 65)'
 
-    if neighbors.length < 4
+    if neighbors.length > 4
+      context.strokeStyle = 'white'
+    else if neighbors.length > 2
+      context.strokeStyle = 'rgb(242, 198, 65)'
+    else if neighbors.length > 0
+      context.strokeStyle = 'orange'
 
-      for x in neighbors
+    # context.strokeStyle = 'rgb(242, 198, 65)'
 
-        context.beginPath()
-        context.moveTo(node.xPos, node.yPos)
-        context.lineTo(x.xPos, x.yPos)
-        context.stroke()
+    for x in neighbors
+
+      context.beginPath()
+      context.moveTo(node.xPos, node.yPos)
+      context.lineTo(x.xPos, x.yPos)
+      context.stroke()
 
   drawCircle: (circle) ->
 
