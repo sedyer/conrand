@@ -66,6 +66,9 @@
       evolve() {
         var i, j, k, len, len1, len2, neighbor, neighbors, newArray, newNode, node, ref, test, theta;
         newArray = [];
+        if (this.nodeArray.length === 0) {
+          this.seed();
+        }
         ref = this.nodeArray;
         for (i = 0, len = ref.length; i < len; i++) {
           node = ref[i];

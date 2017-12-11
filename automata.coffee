@@ -61,6 +61,9 @@ class Conrand
 
     newArray = []
 
+    if @nodeArray.length == 0
+      @seed()
+
     for node in @nodeArray
 
       if node.alive is true
