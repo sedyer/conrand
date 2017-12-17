@@ -6,8 +6,8 @@ class Conrand
 
   #graphics parameters
 
-  canvasheight: 900
-  canvaswidth: 900
+  canvasheight: window.innerHeight
+  canvaswidth: window.innerWidth
 
   #game parameters
   
