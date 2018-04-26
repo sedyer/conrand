@@ -16,7 +16,20 @@
         document.body.appendChild(this.canvas);
         this.canvas.height = this.canvasheight;
         this.canvas.width = this.canvaswidth;
-        return this.drawingContext = this.canvas.getContext('2d');
+        this.canvas.setAttribute('tabindex', 0);
+        this.drawingContext = this.canvas.getContext('2d');
+        this.canvas.addEventListener('click', (e) => {
+          var clickX, clickY, rect;
+          rect = this.canvas.getBoundingClientRect();
+          clickX = e.clientX - rect.left;
+          clickY = e.clientY - rect.top;
+          return this.nodeArray.push(this.createCircle(clickX, clickY, 2));
+        });
+        return this.canvas.addEventListener('keydown', (e) => {
+          if (e.keyCode === 32) {
+            return this.paused = !this.paused;
+          }
+        });
       }
 
       seed() {
@@ -43,9 +56,11 @@
       }
 
       tick() {
-        this.cull();
-        this.vibrate();
-        this.evolve();
+        if (this.paused === false) {
+          this.cull();
+          this.vibrate();
+          this.evolve();
+        }
         this.draw();
         return setTimeout(this.tick, this.tickLength);
       }
@@ -194,7 +209,6 @@
           context.strokeStyle = 'orange';
         }
         results = [];
-        // context.strokeStyle = 'rgb(242, 198, 65)'
         for (i = 0, len = neighbors.length; i < len; i++) {
           x = neighbors[i];
           context.beginPath();
@@ -224,9 +238,9 @@
     Conrand.prototype.drawingContext = null;
 
     //graphics parameters
-    Conrand.prototype.canvasheight = 900;
+    Conrand.prototype.canvasheight = window.innerHeight;
 
-    Conrand.prototype.canvaswidth = 900;
+    Conrand.prototype.canvaswidth = window.innerWidth;
 
     //game parameters
     Conrand.prototype.tickLength = 100;
@@ -236,6 +250,8 @@
     Conrand.prototype.adjacentDistance = 36;
 
     Conrand.prototype.vibration = 4;
+
+    Conrand.prototype.paused = false;
 
     return Conrand;
 

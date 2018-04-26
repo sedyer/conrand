@@ -6,8 +6,8 @@ class Conrand
 
   #graphics parameters
 
-  canvasheight: 900
-  canvaswidth: 900
+  canvasheight: window.innerHeight
+  canvaswidth: window.innerWidth
 
   #game parameters
   
@@ -15,6 +15,7 @@ class Conrand
   initialnodes: 200
   adjacentDistance: 36
   vibration: 4
+  paused: false
 
   constructor: ->
     @createCanvas()
@@ -26,8 +27,19 @@ class Conrand
     document.body.appendChild @canvas
     @canvas.height = @canvasheight
     @canvas.width = @canvaswidth
+    @canvas.setAttribute('tabindex', 0)
     @drawingContext = @canvas.getContext '2d'
 
+    @canvas.addEventListener 'click', (e) =>
+      rect = @canvas.getBoundingClientRect()
+      clickX = e.clientX - rect.left
+      clickY = e.clientY - rect.top
+      @nodeArray.push(@createCircle(clickX, clickY, 2))
+      
+    @canvas.addEventListener 'keydown', (e) =>
+      if e.keyCode is 32
+        @paused = !@paused
+    
   seed: ->
     @nodeArray = []
 
@@ -43,9 +55,11 @@ class Conrand
 
   tick: =>
     
-    @cull()
-    @vibrate()
-    @evolve()
+    if @paused is false
+      @cull()
+      @vibrate()
+      @evolve()
+
     @draw()
 
     setTimeout @tick, @tickLength
@@ -163,7 +177,7 @@ class Conrand
     return newCircle
 
   draw: ->
-    
+
     @drawingContext.clearRect(0, 0, @canvas.width, @canvas.height)
 
     for node in @nodeArray
@@ -182,8 +196,6 @@ class Conrand
       context.strokeStyle = 'rgb(242, 198, 65)'
     else if neighbors.length > 0
       context.strokeStyle = 'orange'
-
-    # context.strokeStyle = 'rgb(242, 198, 65)'
 
     for x in neighbors
 
